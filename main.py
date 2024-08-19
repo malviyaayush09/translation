@@ -306,7 +306,7 @@ def get_translator(src_lang, tgt_lang):
         tokenizer=tokenizer,
         src_lang=src_lang,
         tgt_lang=tgt_lang,
-        max_length=400
+        max_length=1024
     )
 
 def translate_text(text, translator):
