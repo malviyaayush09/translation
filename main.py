@@ -200,6 +200,94 @@
 #                 st.error(f"Column '{column_name}' does not exist in the sheet '{sheet_name}'.")
 
 
+# import streamlit as st
+# import pandas as pd
+# from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
+# import fitz  # PyMuPDF
+# import config  # Import the config.py file
+
+# # Load the pre-trained model and tokenizer
+# model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M")
+# tokenizer = AutoTokenizer.from_pretrained("facebook/nllb-200-distilled-600M")
+
+# # Create a translation pipeline
+# def get_translator(src_lang, tgt_lang):
+#     return pipeline(
+#         'translation',
+#         model=model,
+#         tokenizer=tokenizer,
+#         src_lang=src_lang,
+#         tgt_lang=tgt_lang,
+#         max_length=400
+#     )
+
+# def translate_text(text, translator):
+#     if pd.isna(text):
+#         return text
+#     translated = translator(text)
+#     return translated[0]['translation_text']
+
+# def show_language_codes():
+#     st.write("### Language Codes")
+#     codes_df = pd.DataFrame(list(config.LANGUAGE_CODES.items()), columns=["Language", "Code"])
+#     st.dataframe(codes_df)
+
+# # Streamlit UI
+# st.title("Multilingual Translation Tool")
+
+# option = st.selectbox("Select Translation Mode", ["Text", "PDF", "Excel"])
+
+# if st.button("Show Language Codes"):
+#     show_language_codes()
+
+# src_lang = st.text_input("Source Language Code (e.g., 'spa_Latn' for Spanish)")
+# tgt_lang = st.text_input("Target Language Code (e.g., 'eng_Latn' for English)")
+
+# translator = get_translator(src_lang, tgt_lang)
+
+# if option == "Text":
+#     text_input = st.text_area("Enter Text to Translate")
+#     if st.button("Translate"):
+#         if text_input:
+#             translated_text = translate_text(text_input, translator)
+#             st.write("Translated Text:")
+#             st.write(translated_text)
+#         else:
+#             st.warning("Please enter some text for translation.")
+
+# elif option == "PDF":
+#     pdf_file = st.file_uploader("Upload PDF file", type=["pdf"])
+#     if pdf_file:
+#         # Extract text from PDF
+#         text = ""
+#         with fitz.open(stream=pdf_file.read(), filetype="pdf") as doc:
+#             for page in doc:
+#                 text += page.get_text()
+
+#         if text:
+#             translated_text = translate_text(text, translator)
+#             st.write("Translated Text:")
+#             st.write(translated_text)
+#         else:
+#             st.warning("No text found in the PDF.")
+
+# elif option == "Excel":
+#     excel_file = st.file_uploader("Upload Excel file", type=["xlsx"])
+#     if excel_file:
+#         sheet_name = st.text_input("Enter Sheet Name")
+#         column_name = st.text_input("Enter Column Name")
+#         if st.button("Translate Excel"):
+#             df = pd.read_excel(excel_file, sheet_name=sheet_name)
+#             if column_name in df.columns:
+#                 df['translated_text'] = df[column_name].apply(lambda x: translate_text(x, translator))
+#                 output_file_path = "translated_" + excel_file.name
+#                 df.to_excel(output_file_path, sheet_name=sheet_name, index=False, engine='openpyxl')
+#                 st.success("Translation completed and saved successfully.")
+#                 st.write(f"File has been saved as {output_file_path}. You can download it below:")
+#                 st.download_button("Download Translated Excel File", data=open(output_file_path, "rb").read(), file_name=output_file_path)
+#             else:
+#                 st.error(f"Column '{column_name}' does not exist in the sheet '{sheet_name}'.")
+
 import streamlit as st
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
@@ -228,22 +316,26 @@ def translate_text(text, translator):
     return translated[0]['translation_text']
 
 def show_language_codes():
-    st.write("### Language Codes")
     codes_df = pd.DataFrame(list(config.LANGUAGE_CODES.items()), columns=["Language", "Code"])
-    st.dataframe(codes_df)
+    return codes_df
 
 # Streamlit UI
 st.title("Multilingual Translation Tool")
 
 option = st.selectbox("Select Translation Mode", ["Text", "PDF", "Excel"])
 
-if st.button("Show Language Codes"):
-    show_language_codes()
+# Load language codes
+language_codes_df = show_language_codes()
 
-src_lang = st.text_input("Source Language Code (e.g., 'spa_Latn' for Spanish)")
-tgt_lang = st.text_input("Target Language Code (e.g., 'eng_Latn' for English)")
+# Dropdown for language codes
+# st.write("### Language Codes")
+src_lang = st.selectbox("Select Source Language", language_codes_df['Language'])
+src_lang_code = language_codes_df.loc[language_codes_df['Language'] == src_lang, 'Code'].values[0]
 
-translator = get_translator(src_lang, tgt_lang)
+tgt_lang = st.selectbox("Select Target Language", language_codes_df['Language'])
+tgt_lang_code = language_codes_df.loc[language_codes_df['Language'] == tgt_lang, 'Code'].values[0]
+
+translator = get_translator(src_lang_code, tgt_lang_code)
 
 if option == "Text":
     text_input = st.text_area("Enter Text to Translate")
